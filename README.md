@@ -1,20 +1,75 @@
-# Flask CRUD App with MySQL
+Flask CRUD App with MySQL and ReactJS Frontend
 
-This is a simple **CRUD (Create, Read, Update, Delete) web application** built using **Flask**, **MySQL**, and HTML templates.  
-It allows you to manage student data (add, edit, delete, view) using a web interface.
+This is a full-stack CRUD (Create, Read, Update, Delete) web application built using Flask (backend), MySQL (database), and ReactJS (frontend).
+It allows you to manage student data (add, edit, delete, view) through a modern React interface while the backend handles all data operations via Flask API routes.
 
----
+Features
 
-## Features
+List all students in a dynamic React table
 
-- List all students
-- Add a new student
-- Edit existing student information
-- Delete a student
-- Uses MySQL database for storing data
-- Uses HTML templates (Jinja2) for rendering pages
+Add a new student via React form
 
----
+Edit existing student information with pre-filled forms
 
-## Project Structure
+Delete a student with confirmation
 
+Backend powered by Flask API routes
+
+MySQL database for persistent storage
+
+Frontend built with ReactJS (SPA style)
+
+Communicates via JSON API between React and Flask
+
+Project Structure
+python_crud/
+├── backend/             # Flask backend
+│   ├── app.py
+│   ├── venv/
+│   ├── requirements.txt
+│   └── ...other backend files
+│
+├── frontend/            # React frontend
+│   ├── package.json
+│   ├── public/
+│   ├── src/
+│   │   ├── App.js
+│   │   ├── index.js
+│   │   └── pages/
+│   │       ├── Users.js
+│   │       ├── AddUser.js
+│   │       └── EditUser.js
+│   └── ...other React files
+│
+└── README.md
+
+Setup Instructions
+
+Backend
+
+cd backend
+python -m venv venv
+venv\Scripts\activate  # Windows
+source venv/bin/activate  # Linux/Mac
+pip install -r requirements.txt
+python app.py
+
+
+Frontend
+
+cd frontend
+npm install
+npm start
+
+
+Open http://localhost:3000 in your browser.
+
+Technology Stack
+
+Backend: Python, Flask
+
+Frontend: ReactJS
+
+Database: MySQL
+
+Communication: RESTful JSON API
