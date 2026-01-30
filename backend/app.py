@@ -3,6 +3,11 @@ import json
 from flask import Flask, render_template, redirect, request, url_for, jsonify
 import mysql.connector
 from flask_cors import CORS
+from werkzeug.utils import secure_filename
+import os
+
+UPLOAD_FOLDER = "static/uploads"
+ALLOWED_EXTENSIONS = {"png","jpeg","jpg"}
 
 cache = redis.Redis(host='localhost',port=6379,db=0,decode_responses=True)
 
@@ -11,6 +16,13 @@ CACHE_TTL = 60
 app = Flask(__name__)
 CORS(app)
 
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
+
+os.makedirs(UPLOAD_FOLDER,exist_ok=True)
+
+def allowed_filename(filename):
+    return "." in filename and filename.rsplit(".",1)[1].lower() in ALLOWED_EXTENSIONS
 
 db =    mysql.connector.connect(
         host="localhost",
@@ -146,6 +158,40 @@ def api_users():
 
     cache.setex("all_students",CACHE_TTL,json.dumps(student_data))
     return jsonify(student_data)
+
+@app.route("/api/user/<int:id>/photo", methods=["PUT"])
+def update_user_photo(id):
+    file = request.files.get("profile_photo")
+
+    if not file:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    if not allowed_filename(file.filename):
+        return jsonify({"error": "Invalid file type"}), 400
+
+    import uuid
+    ext = file.filename.rsplit(".", 1)[1].lower()
+    filename = f"{uuid.uuid4()}.{ext}"
+    filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+    file.save(filepath)
+
+    cursor = db.cursor()
+    cursor.execute(
+        "UPDATE student_data SET profile_photo=%s WHERE id=%s",
+        (filename, id)
+    )
+    db.commit()
+    cursor.close()
+
+    # Clear cache
+    cache.delete(f"user:{id}")
+    cache.delete("all_students")
+
+    return jsonify({
+        "message": "Profile photo updated",
+        "photo_url": f"/static/uploads/{filename}"
+    }), 200
+
 
 if __name__ == "__main__":
     app.run(debug=True)
