@@ -1,6 +1,12 @@
+import redis
+import json
 from flask import Flask, render_template, redirect, request, url_for, jsonify
 import mysql.connector
 from flask_cors import CORS
+
+cache = redis.Redis(host='localhost',port=6379,db=0,decode_responses=True)
+
+CACHE_TTL = 60
 
 app = Flask(__name__)
 CORS(app)
@@ -47,6 +53,7 @@ def save_data():
     cursor = db.cursor()
     cursor.execute("INSERT into student_data (full_name,mobile,email) VALUES (%s, %s, %s)",(full_name,mobile,email))
     db.commit()
+    cache.delete("all_students")  # clear cached list
     return jsonify({"message": "User created successfully"}), 201
 
 @app.route('/delete/<int:id>/')
@@ -74,12 +81,17 @@ def edit(id):
 
 @app.route("/api/user/<int:id>", methods=["GET"])
 def get_user(id):
+    cached = cache.get(f"user:{id}")
+    if cached:
+        return jsonify(json.loads(cached))
+    
     cursor = db.cursor(dictionary=True)
     cursor.execute("SELECT * FROM student_data WHERE id=%s", (id,))
     user = cursor.fetchone()
     cursor.close()
 
     if user:
+        cache.setex(f"user:{id}",CACHE_TTL,json.dumps(user))
         return jsonify(user), 200
     else:
         return jsonify({"error": "User not found"}), 404
@@ -124,9 +136,15 @@ def test_api():
 
 @app.route("/api/users")
 def api_users():
+    cached = cache.get("all_students")
+    if cached:
+        return jsonify(json.loads(cached))
+    
     cursor = db.cursor(dictionary=True)
     cursor.execute("Select * from student_data")
     student_data = cursor.fetchall()
+
+    cache.setex("all_students",CACHE_TTL,json.dumps(student_data))
     return jsonify(student_data)
 
 if __name__ == "__main__":
